@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scientific Calculator</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.calculator {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 320px;
+}
+h2 { text-align: center; margin-bottom: 10px; }
+#display {
+    width: 100%;
+    height: 40px;
+    font-size: 24px;
+    text-align: right;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+button {
+    padding: 15px;
+    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+    background-color: #f1f1f1;
+    cursor: pointer;
+}
+button:hover { background-color: #ddd; }
+.operator { background-color: #007BFF; color: white; }
+.operator:hover { background-color: #0056b3; }
+.equal { background-color: #28a745; color: white; grid-column: span 2; }
+.equal:hover { background-color: #218838; }
+.function { background-color: #ff9500; color: white; }
+.function:hover { background-color: #cc7a00; }
+</style>
+</head>
+<body>
+<div class="calculator">
+    <h2>Scientific Calculator</h2>
+    <input type="text" id="display" readonly>
+    <div class="buttons">
+        <button onclick="appendValue('7')">7</button>
+        <button onclick="appendValue('8')">8</button>
+        <button onclick="appendValue('9')">9</button>
+        <button class="operator" onclick="appendValue('/')">/</button>
+
+        <button onclick="appendValue('4')">4</button>
+        <button onclick="appendValue('5')">5</button>
+        <button onclick="appendValue('6')">6</button>
+        <button class="operator" onclick="appendValue('*')">*</button>
+
+        <button onclick="appendValue('1')">1</button>
+        <button onclick="appendValue('2')">2</button>
+        <button onclick="appendValue('3')">3</button>
+        <button class="operator" onclick="appendValue('-')">−</button>
+
+        <button onclick="appendValue('0')">0</button>
+        <button onclick="appendValue('.')">.</button>
+        <button class="equal" onclick="calculate()">=</button>
+        <button class="operator" onclick="appendValue('+')">+</button>
+
+        <button onclick="clearDisplay()">C</button>
+        <button onclick="backspace()">⌫</button>
+        <button class="function" onclick="appendValue('(')">(</button>
+        <button class="function" onclick="appendValue(')')">)</button>
+
+        <button class="function" onclick="appendFunction('sin')">sin</button>
+        <button class="function" onclick="appendFunction('cos')">cos</button>
+        <button class="function" onclick="appendFunction('tan')">tan</button>
+        <button class="function" onclick="appendFunction('sqrt')">√</button>
+
+        <button class="function" onclick="appendFunction('log')">log</button>
+        <button class="function" onclick="appendFunction('ln')">ln</button>
+        <button class="operator" onclick="appendValue('^')">^</button>
+        <button class="operator" onclick="appendValue('%')">%</button>
+        <button class="function" onclick="toFraction()">Frac</button>
+
+    </div>
+</div>
+
+<script>
+const display = document.getElementById('display');
+
+// Append numbers/operators
+function appendValue(value) {
+    display.value += value;
+}
+
+// Append functions with opening parenthesis
+function appendFunction(fn) {
+    display.value += fn + '(';
+}
+
+// Clear display
+function clearDisplay() {
+    display.value = '';
+}
+
+// Backspace
+function backspace() {
+    display.value = display.value.slice(0, -1);
+}
+
+// Calculate
+function calculate() {
+    let expr = display.value;
+
+    // Replace % with division by 100
+    expr = expr.replace(/(\d+(\.\d+)?)%/g, '($1/100)');
+
+    // Replace power operator
+    expr = expr.replace(/\^/g, '**');
+
+    // Replace functions with JS equivalents
+    expr = expr.replace(/sin\(/g, 'Math.sin(');
+    expr = expr.replace(/cos\(/g, 'Math.cos(');
+    expr = expr.replace(/tan\(/g, 'Math.tan(');
+    expr = expr.replace(/log\(/g, 'Math.log10(');
+    expr = expr.replace(/ln\(/g, 'Math.log(');
+    expr = expr.replace(/sqrt\(/g, 'Math.sqrt(');
+
+    // Convert degrees to radians for trig functions
+    expr = expr.replace(/Math\.sin\(([^)]+)\)/g, 'Math.sin(($1)*Math.PI/180)');
+    expr = expr.replace(/Math\.cos\(([^)]+)\)/g, 'Math.cos(($1)*Math.PI/180)');
+    expr = expr.replace(/Math\.tan\(([^)]+)\)/g, 'Math.tan(($1)*Math.PI/180)');
+
+    try {
+        const result = eval(expr);
+        display.value = result;
+    } catch (e) {
+        display.value = 'Error';
+    }
+}
+function toFraction() {
+    let value = display.value;
+
+    if (!value) return; // if empty, do nothing
+
+    // Convert string to number
+    let num = parseFloat(value);
+    if (isNaN(num)) {
+        display.value = 'Error';
+        return;
+    }
+
+    // Convert decimal to fraction
+    let decimalStr = num.toString();
+    if (decimalStr.indexOf('.') === -1) {
+        // No decimal, keep as is
+        display.value = num + '/1';
+        return;
+    }
+
+    let digitsAfterDecimal = decimalStr.split('.')[1].length;
+    let numerator = num * Math.pow(10, digitsAfterDecimal);
+    let denominator = Math.pow(10, digitsAfterDecimal);
+
+    // Simplify fraction
+    let gcd = (a, b) => b ? gcd(b, a % b) : a;
+    let divisor = gcd(numerator, denominator);
+    numerator /= divisor;
+    denominator /= divisor;
+
+    display.value = numerator + '/' + denominator;
+}
+
+</script>
+</body>
+</html>
